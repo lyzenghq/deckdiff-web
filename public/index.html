@@ -1,0 +1,51 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-2.0-only -->
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#15191e">
+  <meta name="description" content="比较两个炉石传说卡组的卡牌、数量与备牌差异。">
+  <title>DeckDIFF Web · 炉石卡组比较</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/app.mjs"></script>
+</head>
+<body>
+  <header class="topbar wrap">
+    <span class="brand" data-i18n="brand">DeckDIFF Web</span>
+    <div class="language" role="group" aria-label="界面语言" data-i18n-aria="language"><button type="button" data-locale="zh_CN" aria-pressed="true" lang="zh-CN">中文</button><button type="button" data-locale="en_US" aria-pressed="false" lang="en">English</button></div>
+  </header>
+  <main class="wrap">
+    <section class="intro"><h1 data-i18n="title">卡组比较</h1><p data-i18n="instructions">输入两个卡组代码，比较卡牌与数量变化。支持游戏内导出的完整文本。</p></section>
+    <form id="compare-form">
+      <div class="input-grid">
+        <section class="input-panel">
+          <div class="panel-heading"><label for="deck-a"><span class="deck-letter">A</span><span data-i18n="deckA">原始卡组</span></label><button class="text-button" type="button" data-paste="a" data-i18n="paste">粘贴</button></div>
+          <textarea id="deck-a" spellcheck="false" autocomplete="off" aria-describedby="hint-a error-a" placeholder="粘贴卡组 A 的代码或导出文本" data-i18n-placeholder="placeholderA"></textarea>
+          <div class="input-bottom"><span id="hint-a" data-i18n="hintA">A：比较基准</span><button class="text-button" type="button" data-clear="a" data-i18n="clear">清空</button></div><p id="error-a" class="field-error" role="alert"></p>
+        </section>
+        <section class="input-panel">
+          <div class="panel-heading"><label for="deck-b"><span class="deck-letter">B</span><span data-i18n="deckB">目标卡组</span></label><button class="text-button" type="button" data-paste="b" data-i18n="paste">粘贴</button></div>
+          <textarea id="deck-b" spellcheck="false" autocomplete="off" aria-describedby="hint-b error-b" placeholder="粘贴卡组 B 的代码或导出文本" data-i18n-placeholder="placeholderB"></textarea>
+          <div class="input-bottom"><span id="hint-b" data-i18n="hintB">B：比较目标</span><button class="text-button" type="button" data-clear="b" data-i18n="clear">清空</button></div><p id="error-b" class="field-error" role="alert"></p>
+        </section>
+      </div>
+      <div class="action-row"><div class="aux-actions"><button id="example" class="secondary" type="button" data-i18n="example">载入示例</button><button id="swap" class="secondary" type="button" data-i18n="swap">交换 A / B</button></div><div class="submit-actions"><span class="keyboard-hint">Ctrl / ⌘ + Enter</span><button class="primary" id="compare-button" type="submit" data-i18n="compare">比较卡组</button></div></div>
+    </form>
+    <p id="notice" class="notice" role="status" aria-live="polite" hidden></p>
+    <section id="empty" class="empty-state"><h2 data-i18n="emptyTitle">尚未比较</h2><p data-i18n="emptyHelp">输入两个卡组代码后点击“比较卡组”。</p></section>
+    <section id="results" hidden aria-label="比较结果" data-i18n-aria="results">
+      <div class="result-heading"><h2 data-i18n="results">比较结果</h2><button id="copy-result" type="button" class="secondary" data-i18n="copy">复制差异</button></div>
+      <div id="summary" class="summary"></div>
+      <div class="results-toolbar"><div class="filters" role="group" aria-label="显示范围" data-i18n-aria="filters"><button type="button" data-filter="diff" aria-pressed="true"><span data-i18n="differences">差异</span><span id="diff-count">0</span></button><button type="button" data-filter="all" aria-pressed="false" data-i18n="allCards">全部卡牌</button><button type="button" data-filter="common" aria-pressed="false" data-i18n="commonCards">共同卡牌</button></div><span class="sort-label" data-i18n="sort">法力值 / 卡名排序 · 点击查看详情</span></div>
+      <div id="deck-headings" class="deck-headings"></div><div id="cards" class="comparison-list"></div>
+      <section id="sideboard-section" hidden><div class="sideboard-heading"><h3 data-i18n="sideboard">备牌 / 模块</h3><span data-i18n="sideboardHelp">单独比较，不计入主卡组张数</span></div><div id="sideboard" class="comparison-list"></div></section>
+      <p id="no-rows" class="no-rows" hidden></p><div id="result-footnote" class="result-footnote"></div>
+    </section>
+  </main>
+  <footer class="wrap"><span data-i18n="copyright">卡牌版权归 Blizzard Entertainment 所有。</span><span class="footer-links"><a href="/LICENSE" target="_blank" rel="noreferrer" data-i18n="softwareLicense">代码许可：GPLv2</a><a id="official-library" href="https://hearthstone.blizzard.com/zh-cn/cards" target="_blank" rel="noreferrer" data-i18n="officialLibrary">官方卡牌库</a></span></footer>
+  <dialog id="card-dialog" aria-labelledby="card-title"><button id="close-dialog" class="close-dialog" type="button" aria-label="关闭卡牌详情" data-i18n-aria="close">×</button><div id="card-detail"></div></dialog>
+  <div id="toast" class="toast" role="status" hidden></div>
+</body>
+</html>
