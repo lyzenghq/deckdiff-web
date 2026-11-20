@@ -21,6 +21,15 @@ test('alternate hero portraits use the official class ID when available', () => 
   assert.equal(heroClassName('en_US', 99999, {classId: 10}), 'Warrior');
   assert.equal(heroClassName('en_US', 99999), null);
 });
+test('the initial page declares English and selects it first', async () => {
+  const html = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
+  const choices = [...html.matchAll(/data-locale="([^"]+)" aria-pressed="([^"]+)"/g)];
+  assert.match(html, /<html lang="en">/);
+  assert.ok(html.includes(`<title>${messages.en_US.pageTitle}</title>`));
+  assert.ok(html.includes(`<meta name="description" content="${messages.en_US.description}">`));
+  assert.deepEqual(choices.map(([, locale, pressed]) => [locale, pressed]), [['en_US', 'true'], ['zh_CN', 'false']]);
+});
+
 test('static labels and parser errors resolve in either interface language', async () => {
   const html = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
   const parser = await readFile(new URL('../public/decks.mjs', import.meta.url), 'utf8');

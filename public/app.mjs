@@ -7,7 +7,7 @@ import {loadCardData} from './card-loader.mjs';
 const $ = selector => document.querySelector(selector);
 const inputs = [$('#deck-a'), $('#deck-b')];
 const state = {
-  locale: 'zh_CN', filter: 'diff', decks: null, diff: null,
+  locale: 'en_US', filter: 'diff', decks: null, diff: null,
   metadata: new Map(), loadStates: new Map(), requests: new Map(),
   generation: 0, activeCard: null, errors: [null, null], notice: null, toast: null,
 };
@@ -65,7 +65,7 @@ try {
   if (data) {
     inputs[0].value = typeof data.a === 'string' ? data.a.slice(0,100000) : '';
     inputs[1].value = typeof data.b === 'string' ? data.b.slice(0,100000) : '';
-    if (data.locale === 'en_US') state.locale = data.locale;
+    if (data.locale === 'en_US' || data.locale === 'zh_CN') state.locale = data.locale;
   }
 } catch { /* Ignore stale settings. */ }
 
