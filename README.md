@@ -116,7 +116,7 @@ Run the test suite from the project folder.
 node --test
 ```
 
-The built-in tests cover deckstring parsing, quantities, sideboard ownership, invalid inputs, disk caching, OAuth, HTTP routes, and translation coverage. API tests use mock responses and run without credentials or internet access. [Initial release checks in Simplified Chinese](RELEASE_CHECK.md)
+The built-in tests cover deckstring parsing, quantities, sideboard ownership, invalid inputs, disk caching, OAuth, HTTP routes, and translation coverage. API tests use mock responses and run without credentials or internet access. [Release verification in Simplified Chinese](RELEASE_CHECK.md)
 
 Deploy to a host that supports Node.js 22.9.0 or later and a long-running HTTP process. HTTPS, process management, and rate limiting are handled by the hosting platform. The server requires a Node.js host, so static hosts such as GitHub Pages cannot run it.
 
