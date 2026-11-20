@@ -73,6 +73,7 @@ const ZILLIAX_APPEARANCES = new Map([
   [110440, 104944], [110441, 104948], [110442, 104945], [110443, 104949],
   [110444, 104947], [110445, 104950], [110446, 104951], [112530, 104946],
 ]);
+export const zilliaxCardIds = [ZILLIAX, ...ZILLIAX_APPEARANCES.keys(), ...ZILLIAX_APPEARANCES.values()];
 
 export function zilliaxAppearanceModule(id, owner) {
   if (owner === ZILLIAX) return ZILLIAX_APPEARANCES.get(id);

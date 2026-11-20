@@ -19,7 +19,7 @@
 
 - 当前版本的实机检查覆盖 macOS 和 Chrome。Windows 启动的实测记录来自初版。Linux 兼容性仅通过 macOS 上的 `dash` 检查和启动验证。
 - 默认数据模式使用真实的暴雪网页接口和图像 CDN 验证。Battle.net 模式使用模拟 OAuth 响应，覆盖 token 复用和 401 后重新鉴权。
-- 当前发布范围为源码和本地运行。在线托管暂缓。
+- 这次检查覆盖源码和本地运行。静态版发布步骤见 [中文版 README](README.zh-cn.md#发布静态版到-github-pages)。
 
 ## 初版检查
 

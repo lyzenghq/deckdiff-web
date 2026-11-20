@@ -3,8 +3,11 @@ import {parseInput, compare, examples, isZilliaxModule, zilliaxAppearanceModule}
 import {translate, heroClassName, cardDisplayName} from './i18n.mjs';
 import {formatDifferences} from './clipboard.mjs';
 import {loadCardData} from './card-loader.mjs';
+import {loadStaticCards} from './static-cards.mjs';
 
 const $ = selector => document.querySelector(selector);
+const staticMode = Boolean($('meta[name="deckdiff-card-source"][content="snapshot"]'));
+const cardSource = staticMode ? loadStaticCards : undefined;
 const inputs = [$('#deck-a'), $('#deck-b')];
 const state = {
   locale: 'en_US', filter: 'diff', decks: null, diff: null,
@@ -14,7 +17,11 @@ const state = {
 const t = (key, params) => translate(state.locale, key, params);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[c]));
 const cardImage = (id, kind, value) => {
-  try { return new URL(value).protocol === 'https:' ? `/api/card-image/${state.locale}/${id}/${kind}` : ''; }
+  try {
+    const url = new URL(value);
+    if (url.protocol !== 'https:' || url.username || url.password) return '';
+    return staticMode ? url.href : `/api/card-image/${state.locale}/${id}/${kind}`;
+  }
   catch { return ''; }
 };
 const plainText = value => String(value || '').replace(/<[^>]*>/g, '').replace(/\[x\]/g, '');
@@ -52,7 +59,7 @@ function dataNotice() {
   $('#copy-result').disabled = Boolean(status?.loading);
   if (status?.loading) notice(status.reloading ? 'reloading' : 'loading', {attempt: status.attempt, total: status.total}, Boolean(status.reloading));
   else if (status?.error) notice(status.reloading ? 'reloadFailed' : status.error, {attempt: status.attempt, reason: t(status.error)}, true);
-  else if (status?.missing?.length) notice('missingCards', {count: status.missing.length}, true);
+  else if (status?.missing?.length) notice(staticMode ? 'snapshotMissing' : 'missingCards', {count: status.missing.length}, true);
   else if (status?.reloaded) notice('reloaded');
   else notice(null);
 }
@@ -175,7 +182,7 @@ async function loadMetadata({refresh = false} = {}) {
   const ids = [...new Set(state.decks.flatMap(deck => [...deck.cards, ...deck.sideboard].flatMap(card => [card.id, card.owner].filter(Boolean))))];
   state.requests.set(requestKey, request);
   try {
-    const data = await loadCardData({ids, locale, refresh, signal: request.controller.signal, onAttempt: ({attempt, total}) => {
+    const data = await loadCardData({ids, locale, refresh, source: cardSource, signal: request.controller.signal, onAttempt: ({attempt, total}) => {
       if (!isCurrent()) return;
       state.loadStates.set(locale, {loading: true, reloading: refresh, attempt, total});
       if (locale === state.locale) dataNotice();
@@ -194,14 +201,15 @@ async function loadMetadata({refresh = false} = {}) {
       .filter(id => !heroClassName(locale, id, cards.get(id)));
     if (portraits.length) {
       // Hero portraits supplement the heading after the comparison has rendered.
-      const data = await loadCardData({ids: portraits, locale, signal: request.controller.signal}).catch(() => null);
+      const data = await loadCardData({ids: portraits, locale, source: cardSource, signal: request.controller.signal}).catch(() => null);
       if (!data || !isCurrent()) return;
       for (const portrait of data.cards) cards.set(portrait.id, portrait);
       if (locale === state.locale) renderDeckHeadings();
     }
   } catch (error) {
     if (!isCurrent() || request.controller.signal.aborted) return;
-    const errors = {API_TIMEOUT: 'timeout', API_CONFIGURATION: 'apiConfiguration', LOCAL_SERVER_UNAVAILABLE: 'localServerUnavailable'};
+    const errors = {API_TIMEOUT: staticMode ? 'snapshotUnavailable' : 'timeout', API_CONFIGURATION: 'apiConfiguration', LOCAL_SERVER_UNAVAILABLE: 'localServerUnavailable',
+      SNAPSHOT_UNAVAILABLE: 'snapshotUnavailable', SNAPSHOT_EXPIRED: 'snapshotExpired'};
     state.loadStates.set(locale, {error: errors[error.code] || 'apiUnavailable', reloading: refresh, attempt: state.loadStates.get(locale)?.attempt || 1});
     if (locale === state.locale) dataNotice();
   } finally { if (state.requests.get(requestKey) === request) state.requests.delete(requestKey); }

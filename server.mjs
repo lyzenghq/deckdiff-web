@@ -5,6 +5,7 @@ import {fileURLToPath} from 'node:url';
 import {resolve, extname, join} from 'node:path';
 import {CardService} from './lib/cards.mjs';
 import {CardImageCache} from './lib/card-images.mjs';
+import {WEB_FILES} from './lib/web-files.mjs';
 
 const root = fileURLToPath(new URL('./public/', import.meta.url));
 export function createApp({
@@ -12,7 +13,7 @@ export function createApp({
   cards = new CardService({cacheDirectory}),
   images = new CardImageCache({directory: join(cacheDirectory, 'images')}),
 } = {}) {
-  const files = new Set(['index.html', 'styles.css', 'app.mjs', 'decks.mjs', 'clipboard.mjs', 'card-loader.mjs', 'i18n.mjs', 'favicon.svg', 'LICENSE']);
+  const files = new Set([...WEB_FILES, 'LICENSE']);
   const types = {'.html': 'text/html', '.css': 'text/css', '.mjs': 'text/javascript', '.svg': 'image/svg+xml'};
   return createServer(async (req, res) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');

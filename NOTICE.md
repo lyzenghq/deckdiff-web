@@ -27,3 +27,5 @@ The parser in `public/decks.mjs` is implemented in this repository. The npm-deck
 ## Blizzard content
 
 Hearthstone card names, text, artwork, images, and related trademarks belong to Blizzard Entertainment. They are not covered by this repository's GPLv2 software license. This project is not affiliated with or endorsed by Blizzard Entertainment.
+
+The default static build uses HearthSim's HearthstoneJSON card data and image service. HearthstoneJSON identifies Blizzard Entertainment as the copyright holder of the card data. [HearthstoneJSON data documentation](https://hearthstonejson.com/docs/cards.html) · [HearthstoneJSON image documentation](https://hearthstonejson.com/docs/images.html)

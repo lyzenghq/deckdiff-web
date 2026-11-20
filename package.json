@@ -3,10 +3,14 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Compare Hearthstone decks with official bilingual card data.",
+  "description": "Compare Hearthstone decks with English and Simplified Chinese card data.",
   "license": "GPL-2.0-only",
   "engines": { "node": ">=22.9.0" },
   "dependencies": {},
   "devDependencies": {},
-  "scripts": { "start": "node --env-file-if-exists=.env server.mjs", "test": "node --test" }
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server.mjs",
+    "test": "node --test",
+    "build:pages": "node --env-file-if-exists=.env scripts/build-pages.mjs"
+  }
 }

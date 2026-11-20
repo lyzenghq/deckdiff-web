@@ -1,0 +1,62 @@
+name: Deploy static site to GitHub Pages
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 8 * * *'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pages.yml'
+      - 'public/**'
+      - 'lib/**'
+      - 'scripts/**'
+      - 'test/**'
+      - 'package.json'
+      - 'LICENSE'
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pages: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - uses: actions/configure-pages@v5
+      - run: npm test
+      - run: npm run build:pages
+        env:
+          PAGES_CARD_SOURCE: ${{ vars.PAGES_CARD_SOURCE }}
+          BLIZZARD_CLIENT_ID: ${{ secrets.BLIZZARD_CLIENT_ID }}
+          BLIZZARD_CLIENT_SECRET: ${{ secrets.BLIZZARD_CLIENT_SECRET }}
+          BLIZZARD_REGION: ${{ vars.BLIZZARD_REGION }}
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Deploy
+        uses: actions/deploy-pages@v4
+        id: deploy
