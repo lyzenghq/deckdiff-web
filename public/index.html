@@ -15,45 +15,45 @@
 <body>
   <header class="topbar wrap">
     <span class="brand" data-i18n="brand">DeckDIFF Web</span>
-    <div class="language" role="group" aria-label="Interface language" data-i18n-aria="language"><button type="button" data-locale="en_US" aria-pressed="true" lang="en">English</button><button type="button" data-locale="zh_CN" aria-pressed="false" lang="zh-CN">简体中文</button></div>
+    <div class="language" role="group" aria-label="Interface Language" data-i18n-aria="language"><button type="button" data-locale="en_US" aria-pressed="true" lang="en">English</button><button type="button" data-locale="zh_CN" aria-pressed="false" lang="zh-CN">简体中文</button></div>
   </header>
   <main class="wrap">
-    <section class="intro"><h1 data-i18n="title">Deck comparison</h1><p data-i18n="instructions">Enter two deck codes to compare cards and quantities. Full in-game deck exports are supported.</p></section>
+    <section class="intro"><h1 data-i18n="title">Deck Comparison</h1><p data-i18n="instructions">Enter two deck codes to compare cards and quantities. Full in-game deck exports are supported.</p></section>
     <form id="compare-form">
       <div class="input-grid">
         <section class="input-panel">
-          <div class="panel-heading"><label for="deck-a"><span class="deck-letter">A</span><span data-i18n="deckA">Original deck</span></label><button class="text-button" type="button" data-paste="a" data-i18n="paste">Paste</button></div>
+          <div class="panel-heading"><label for="deck-a"><span class="deck-letter">A</span><span data-i18n="deckA">Original Deck</span></label><button class="text-button" type="button" data-paste="a" data-i18n="paste">Paste</button></div>
           <textarea id="deck-a" spellcheck="false" autocomplete="off" aria-describedby="hint-a error-a" placeholder="Paste deck A code or exported deck text" data-i18n-placeholder="placeholderA"></textarea>
           <div class="input-bottom"><span id="hint-a" data-i18n="hintA">A: comparison baseline</span><button class="text-button" type="button" data-clear="a" data-i18n="clear">Clear</button></div><p id="error-a" class="field-error" role="alert"></p>
         </section>
         <section class="input-panel">
-          <div class="panel-heading"><label for="deck-b"><span class="deck-letter">B</span><span data-i18n="deckB">Target deck</span></label><button class="text-button" type="button" data-paste="b" data-i18n="paste">Paste</button></div>
+          <div class="panel-heading"><label for="deck-b"><span class="deck-letter">B</span><span data-i18n="deckB">Target Deck</span></label><button class="text-button" type="button" data-paste="b" data-i18n="paste">Paste</button></div>
           <textarea id="deck-b" spellcheck="false" autocomplete="off" aria-describedby="hint-b error-b" placeholder="Paste deck B code or exported deck text" data-i18n-placeholder="placeholderB"></textarea>
           <div class="input-bottom"><span id="hint-b" data-i18n="hintB">B: comparison target</span><button class="text-button" type="button" data-clear="b" data-i18n="clear">Clear</button></div><p id="error-b" class="field-error" role="alert"></p>
         </section>
       </div>
-      <div class="action-row"><div class="aux-actions"><button id="example" class="secondary" type="button" data-i18n="example">Load example</button><button id="swap" class="secondary" type="button" data-i18n="swap">Swap A / B</button></div><div class="submit-actions"><span class="keyboard-hint">Ctrl / ⌘ + Enter</span><button class="primary" id="compare-button" type="submit" data-i18n="compare">Compare decks</button></div></div>
+      <div class="action-row"><div class="aux-actions"><button id="example" class="secondary" type="button" data-i18n="example">Load Example</button><button id="swap" class="secondary" type="button" data-i18n="swap">Swap A / B</button></div><div class="submit-actions"><span class="keyboard-hint">Ctrl / ⌘ + Enter</span><button class="primary" id="compare-button" type="submit" data-i18n="compare">Compare Decks</button></div></div>
     </form>
     <p id="notice" class="notice" role="status" aria-live="polite" hidden></p>
-    <section id="empty" class="empty-state"><h2 data-i18n="emptyTitle">No comparison yet</h2><p data-i18n="emptyHelp">Enter two deck codes, then select “Compare decks”.</p></section>
-    <section id="results" hidden aria-label="Comparison results" data-i18n-aria="results">
-      <div class="result-heading"><h2 data-i18n="results">Comparison results</h2><button id="copy-result" type="button" class="secondary" data-i18n="copy">Copy changes</button></div>
+    <section id="empty" class="empty-state"><h2 data-i18n="emptyTitle">No Comparison Yet</h2><p data-i18n="emptyHelp">Enter two deck codes, then select “Compare Decks”.</p></section>
+    <section id="results" hidden aria-label="Comparison Results" data-i18n-aria="results">
+      <div class="result-heading"><h2 data-i18n="results">Comparison Results</h2><button id="copy-result" type="button" class="secondary" data-i18n="copy">Copy Changes</button></div>
       <div id="summary" class="summary"></div>
-      <div class="results-toolbar"><div class="filters" role="group" aria-label="Display scope" data-i18n-aria="filters"><button type="button" data-filter="diff" aria-pressed="true"><span data-i18n="differences">Changes</span><span id="diff-count">0</span></button><button type="button" data-filter="all" aria-pressed="false" data-i18n="allCards">All cards</button><button type="button" data-filter="common" aria-pressed="false" data-i18n="commonCards">Shared cards</button></div><span class="sort-label" data-i18n="sort">Sorted by mana / name · Select a card for details</span></div>
+      <div class="results-toolbar"><div class="filters" role="group" aria-label="Display Scope" data-i18n-aria="filters"><button type="button" data-filter="diff" aria-pressed="true"><span data-i18n="differences">Changes</span><span id="diff-count">0</span></button><button type="button" data-filter="all" aria-pressed="false" data-i18n="allCards">All Cards</button><button type="button" data-filter="common" aria-pressed="false" data-i18n="commonCards">Shared Cards</button></div><span class="sort-label" data-i18n="sort">Sorted by mana / name · Select a card for details</span></div>
       <div id="deck-headings" class="deck-headings"></div><div id="cards" class="comparison-list"></div>
-      <section id="sideboard-section" hidden><div class="sideboard-heading"><h3 data-i18n="sideboard">Sideboard / modules</h3><span data-i18n="sideboardHelp">Compared separately; excluded from main deck totals</span></div><div id="sideboard" class="comparison-list"></div></section>
+      <section id="sideboard-section" hidden><div class="sideboard-heading"><h3 data-i18n="sideboard">Sideboard / Modules</h3><span data-i18n="sideboardHelp">Compared separately; excluded from main deck totals</span></div><div id="sideboard" class="comparison-list"></div></section>
       <p id="no-rows" class="no-rows" hidden></p><div id="result-footnote" class="result-footnote"></div>
     </section>
   </main>
   <footer class="wrap">
     <span data-i18n="copyright">Card content © Blizzard Entertainment.</span>
     <span class="footer-links">
-      <a href="https://github.com/lyzenghq/deckdiff-web" target="_blank" rel="noreferrer" data-i18n="projectRepository">GitHub repository</a>
-      <a href="./LICENSE" target="_blank" rel="noreferrer" data-i18n="softwareLicense">Code license: GPLv2</a>
-      <a id="official-library" href="https://hearthstone.blizzard.com/en-us/cards" target="_blank" rel="noreferrer" data-i18n="officialLibrary">Official card library</a>
+      <a href="https://github.com/lyzenghq/deckdiff-web" target="_blank" rel="noreferrer" data-i18n="projectRepository">GitHub Repository</a>
+      <a href="./LICENSE" target="_blank" rel="noreferrer" data-i18n="softwareLicense">Code License: GPLv2</a>
+      <a id="official-library" href="https://hearthstone.blizzard.com/en-us/cards" target="_blank" rel="noreferrer" data-i18n="officialLibrary">Official Card Library</a>
     </span>
   </footer>
-  <dialog id="card-dialog" aria-labelledby="card-title"><button id="close-dialog" class="close-dialog" type="button" aria-label="Close card details" data-i18n-aria="close">×</button><div id="card-detail"></div></dialog>
+  <dialog id="card-dialog" aria-labelledby="card-title"><button id="close-dialog" class="close-dialog" type="button" aria-label="Close Card Details" data-i18n-aria="close">×</button><div id="card-detail"></div></dialog>
   <div id="toast" class="toast" role="status" hidden></div>
 </body>
 </html>

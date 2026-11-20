@@ -59,7 +59,7 @@ The launchers check the Node.js version. On any platform, you can also start the
 node --env-file-if-exists=.env server.mjs
 ```
 
-Open <http://127.0.0.1:3210>, paste or load two deck lists, and select **Compare decks**. Keep the terminal open while using the app. Press **Ctrl+C** to stop the server.
+Open <http://127.0.0.1:3210>, paste or load two deck lists, and select **Compare Decks**. Keep the terminal open while using the app. Press **Ctrl+C** to stop the server.
 
 The default mode works without an API key or a `.env` file. If Node.js reports `.env not found. Continuing without it.`, the app is using the default configuration. This edition uses its Node.js HTTP server to retrieve card data.
 
@@ -160,7 +160,7 @@ Similarity is the number of shared cards divided by the size of the larger main 
 
 ## Card artwork settings
 
-Edit `--card-art-opacity-desktop` and `--card-art-opacity-mobile` to adjust the row illustrations in Changes, All cards, and Shared cards. Values range from `0` (transparent) to `1` (opaque). Refresh the Node.js edition after editing, or rebuild the static edition to include the new settings. [Artwork configuration](public/config.css)
+Edit `--card-art-opacity-desktop` and `--card-art-opacity-mobile` to adjust the row illustrations in Changes, All Cards, and Shared Cards. Values range from `0` (transparent) to `1` (opaque). Refresh the Node.js edition after editing, or rebuild the static edition to include the new settings. [Artwork configuration](public/config.css)
 
 ## Tests
 
@@ -177,7 +177,7 @@ The built-in tests cover deckstring parsing, quantities, sideboard ownership, in
 - **Node.js is missing.** Install it, reopen the terminal, and verify that `node --version` works.
 - **Node.js rejects `--env-file-if-exists`.** Upgrade to Node.js 22.9.0 or later.
 - **The port is already in use.** For the Node.js edition, set another `PORT` in `.env`. For static preview, change `3211` in the HTTP server command. Open the URL with the new port.
-- **Card names or images are missing.** Select **Retry loading** when the option appears. In the Node.js edition, check the server's connection to Blizzard. In the static edition, check that the host serves `data/manifest.json` and the corresponding JSON files from `dist/`. If only images are missing, check access to the source's image CDN.
+- **Card names or images are missing.** Select **Retry Loading** when the option appears. In the Node.js edition, check the server's connection to Blizzard. In the static edition, check that the host serves `data/manifest.json` and the corresponding JSON files from `dist/`. If only images are missing, check access to the source's image CDN.
 - **The Paste button is unavailable.** Paste with **Ctrl / Cmd + V**. Use HTTPS for remote deployments.
 
 ## Project layout
