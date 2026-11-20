@@ -103,7 +103,7 @@ node --env-file-if-exists=.env server.mjs
 
 ## 官方数据来源
 
-默认通过服务端访问[炉石传说官方网站卡牌库](https://hearthstone.blizzard.com/zh-cn/cards)使用的公开网页接口：
+默认通过服务端访问炉石传说官方网站卡牌库的公开网页接口。简中界面中的卡牌库和卡牌详情链接指向繁中官网。[暴雪官方卡牌库](https://hearthstone.blizzard.com/zh-tw/cards)
 
 ```text
 https://hearthstone.blizzard.com/zh-cn/api/cards?ids=315,531&locale=zh_CN&pageSize=200&collectible=0,1

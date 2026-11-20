@@ -19,7 +19,7 @@ const cardImage = (id, kind, value) => {
 };
 const plainText = value => String(value || '').replace(/<[^>]*>/g, '').replace(/\[x\]/g, '');
 const metadata = id => state.metadata.get(state.locale)?.get(id);
-const officialLocale = () => state.locale === 'zh_CN' ? 'zh-cn' : 'en-us';
+const officialLibraryUrl = () => `https://hearthstone.blizzard.com/${state.locale === 'zh_CN' ? 'zh-tw' : 'en-us'}/cards`;
 const STORAGE_KEY = 'deckdiff-web.v1';
 const comparisonMetadata = () => new Map([...state.metadata.values()].flatMap(cards => [...cards]));
 let toastTimer;
@@ -84,7 +84,7 @@ function renderInterface() {
   document.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
   document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.setAttribute('placeholder', t(el.dataset.i18nPlaceholder)); });
   document.querySelectorAll('[data-locale]').forEach(button => { button.setAttribute('aria-pressed', String(button.dataset.locale === state.locale)); });
-  $('#official-library').href = `https://hearthstone.blizzard.com/${officialLocale()}/cards`;
+  $('#official-library').href = officialLibraryUrl();
   renderFieldErrors(); renderNotice();
   if (state.toast) $('#toast').textContent = t(state.toast);
 }
@@ -270,7 +270,7 @@ function openCard(selection) {
   state.activeCard = selection;
   const card = metadata(id), image = cardImage(id, 'full', card?.image), name = cardName(id, owner);
   const description = zilliaxAppearanceModule(id, owner) ? t('appearanceDetails') : plainText(card?.text) || t('noDetails');
-  $('#card-detail').innerHTML = `${image ? `<img src="${esc(image)}" alt="${esc(t('cardImage', {name}))}">` : ''}<h2 id="card-title">${esc(name)}</h2><p>${esc(description)}</p><a href="https://hearthstone.blizzard.com/${officialLocale()}/cards/${id}" target="_blank" rel="noreferrer">${esc(t('viewOfficial'))}</a>`;
+  $('#card-detail').innerHTML = `${image ? `<img src="${esc(image)}" alt="${esc(t('cardImage', {name}))}">` : ''}<h2 id="card-title">${esc(name)}</h2><p>${esc(description)}</p><a href="${officialLibraryUrl()}/${id}" target="_blank" rel="noreferrer">${esc(t('viewOfficial'))}</a>`;
   if (!$('#card-dialog').open) $('#card-dialog').showModal();
 }
 $('#results').addEventListener('click', event => {
