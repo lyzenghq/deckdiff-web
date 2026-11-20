@@ -28,6 +28,7 @@ const cardImage = (id, kind, value) => {
 };
 const plainText = value => String(value || '').replace(/<[^>]*>/g, '').replace(/\[x\]/g, '');
 const metadata = id => state.metadata.get(state.locale)?.get(id);
+const rarities = new Map([[1, 'common'], [2, 'common'], [3, 'rare'], [4, 'epic'], [5, 'legendary']]);
 const officialLibraryUrl = () => `https://hearthstone.blizzard.com/${state.locale === 'zh_CN' ? 'zh-tw' : 'en-us'}/cards`;
 const STORAGE_KEY = 'deckdiff-web.v1';
 const comparisonMetadata = () => new Map([...state.metadata.values()].flatMap(cards => [...cards]));
@@ -243,11 +244,15 @@ function cardRow(row, side) {
   const name = cardName(id, ownerId), isAppearance = Boolean(zilliaxAppearanceModule(id, ownerId));
   const owner = ownerId ? cardName(ownerId) : null;
   const statusClass = side === 'a' && row.delta < 0 ? 'removed-card' : side === 'b' && row.delta > 0 ? 'added-card' : '';
-  return `<button type="button" class="card-row ${statusClass}" data-card="${id}" data-owner="${ownerId || 0}" aria-label="${esc(t('cardLabel', {name, count}))}">
+  const rarity = rarities.get(card?.rarityId) || '';
+  const cardLabel = t('cardLabel', {name, count});
+  const label = rarity ? `${t(`rarity.${rarity}`)} · ${cardLabel}` : cardLabel;
+  const quantity = rarity === 'legendary' ? '<span class="card-star">★</span>' : count > 1 ? count : '';
+  return `<button type="button" class="card-row ${statusClass}" data-rarity="${rarity}" data-card="${id}" data-owner="${ownerId || 0}" aria-label="${esc(label)}">
     ${image ? `<img class="card-art" src="${esc(image)}" alt="" loading="lazy">` : ''}
     ${moduleImage ? `<span class="card-art card-art-window"><img class="card-art-render" src="${esc(moduleImage)}" alt="" loading="lazy"></span>` : ''}
     ${isAppearance ? '<span class="mana" aria-hidden="true"></span>' : `<span class="mana" aria-label="${esc(t('manaLabel', {cost: card?.manaCost ?? t('unknown')}))}">${esc(card?.manaCost ?? '?')}</span>`}
-    <span class="card-name">${esc(name)}${owner ? `<small>${esc(t('owner', {name: owner}))}</small>` : ''}</span><span class="card-copy">×${count}</span></button>`;
+    <span class="card-name">${esc(name)}${owner ? `<small>${esc(t('owner', {name: owner}))}</small>` : ''}</span><span class="card-copy" aria-hidden="true">${quantity}</span></button>`;
 }
 function rowHtml(row) {
   return `<div class="compare-row">${cardRow(row, 'a')}<div class="row-delta">${row.delta === 0 ? '=' : `<span class="${row.delta > 0 ? 'plus' : 'minus'}">${row.delta > 0 ? '+' : '−'}${Math.abs(row.delta)}</span>`}</div>${cardRow(row, 'b')}</div>`;

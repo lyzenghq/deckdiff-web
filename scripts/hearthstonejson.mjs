@@ -5,6 +5,7 @@ const classIds = new Map([
   ['DEATHKNIGHT', 1], ['DRUID', 2], ['HUNTER', 3], ['MAGE', 4], ['PALADIN', 5], ['PRIEST', 6],
   ['ROGUE', 7], ['SHAMAN', 8], ['WARLOCK', 9], ['WARRIOR', 10], ['NEUTRAL', 12], ['DEMONHUNTER', 14],
 ]);
+const rarityIds = new Map([['COMMON', 1], ['FREE', 2], ['RARE', 3], ['EPIC', 4], ['LEGENDARY', 5]]);
 const renderable = new Set(['HERO', 'MINION', 'SPELL', 'WEAPON', 'LOCATION']);
 const art = 'https://art.hearthstonejson.com/v1';
 
@@ -28,6 +29,7 @@ export async function downloadHearthstoneJson(locale, fetcher) {
       id: dbfId,
       name,
       manaCost: card.cost,
+      rarityId: rarityIds.get(card.rarity),
       image: hasArt ? `${art}/render/latest/${language}/256x/${cardId}.png` : null,
       cropImage: hasArt ? `${art}/tiles/${cardId}.webp` : null,
       copyOfCardId: [card.countAsCopyOfDbfId],

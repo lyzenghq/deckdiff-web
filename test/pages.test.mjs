@@ -104,7 +104,7 @@ test('the default Pages build downloads HearthstoneJSON at build time without cr
       return Response.json([
         {dbfId: 39225, id: 'KAR_061', type: 'MINION', name},
         {dbfId: 120180, id: 'CORE_KAR_061', type: 'MINION', name, cost: 7, countAsCopyOfDbfId: 39225,
-          cardClass: 'NEUTRAL', text: chinese ? '战吼' : 'Battlecry'},
+          cardClass: 'NEUTRAL', rarity: 'LEGENDARY', text: chinese ? '战吼' : 'Battlecry'},
         ...zilliaxCardIds.map(dbfId => ({dbfId, id: `module_${dbfId}`, type: 'MINION', name: 'Zilliax'})),
       ]);
     },
@@ -128,6 +128,7 @@ test('the default Pages build downloads HearthstoneJSON at build time without cr
   assert.equal(curator.text, '战吼');
   assert.equal(curator.manaCost, 7);
   assert.equal(curator.classId, 12);
+  assert.equal(curator.rarityId, 5);
   assert.deepEqual(curator.copyOfCardId, [39225]);
   assert.equal(curator.image, 'https://art.hearthstonejson.com/v1/render/latest/zhCN/256x/CORE_KAR_061.png');
   assert.equal(module.cropImage, 'https://art.hearthstonejson.com/v1/tiles/module_110446.webp');
