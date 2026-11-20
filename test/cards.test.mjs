@@ -87,39 +87,31 @@ test('official website provider filters IDs, separates locales, and caches reque
   assert.equal(urls[1].pathname,'/en-us/api/cards');
   await assert.rejects(service.load([0],'zh_CN'));
 });
-test('deduplicates concurrent requests and rejects incomplete official responses',async()=>{
-  let calls=0;
-  const service=new CardService({env:{},fetcher:async()=>{calls++;await new Promise(resolve=>setTimeout(resolve,10));return response({cards:[card],pageCount:1});}});
-  await Promise.all([service.load([315],'zh_CN'),service.load([315],'zh_CN')]);
-  assert.equal(calls,1);
+test('deduplicates concurrent overlapping batches and rejects incomplete official responses',async()=>{
+  const requests=[];
+  const service=new CardService({env:{},fetcher:async url=>{
+    const ids=new URL(url).searchParams.get('ids'); requests.push(ids);
+    await new Promise(resolve=>setTimeout(resolve,10));
+    return response({cards:ids==='315'?[card]:[{id:531,name:'炎爆术'}],pageCount:1});
+  }});
+  const [single,batch]=await Promise.all([service.load([315],'zh_CN'),service.load([315,531],'zh_CN')]);
+  assert.deepEqual(requests,['315','531']);
+  assert.deepEqual(single.cards.map(card=>card.id),[315]);
+  assert.deepEqual(batch.cards.map(card=>card.id),[315,531]);
   const broken=new CardService({env:{},fetcher:async()=>response({cards:[card],pageCount:2})});
   await assert.rejects(broken.load([315],'zh_CN'),/完整/);
 });
 
-test('expired card data is not returned when a refresh omits that card', async () => {
-  let now = 1000, calls = 0;
-  const service = new CardService({env: {}, now: () => now, fetcher: async () => {
-    calls++;
-    return response({cards: calls === 1 ? [card] : [], pageCount: 1});
+test('a retry fetches missing cards and keeps previously loaded cards', async () => {
+  const requests=[];
+  const service=new CardService({env:{},fetcher:async url=>{
+    requests.push(new URL(url).searchParams.get('ids'));
+    return response({cards:requests.length===1?[card]:[{id:531,name:'炎爆术'}],pageCount:1});
   }});
-  assert.equal((await service.load([315], 'zh_CN')).cards.length, 1);
-  now += 6 * 60 * 60 * 1000;
-  const result = await service.load([315], 'zh_CN');
-  assert.equal(calls, 2);
-  assert.deepEqual(result.cards, []);
-  assert.deepEqual(result.missing, [315]);
-});
-
-test('explicit reload bypasses valid cache and removes records omitted by the refresh', async () => {
-  let calls=0;
-  const service=new CardService({env:{},fetcher:async()=>{
-    calls++; return response({cards:calls===3?[]:[{...card,name:calls===1?'Old name':'Updated name'}],pageCount:1});
-  }});
-  await service.load([315],'zh_CN');
-  await service.load([315],'zh_CN'); assert.equal(calls,1);
-  assert.equal((await service.load([315],'zh_CN',{refresh:true})).cards[0].name,'Updated name');
-  const missing=await service.load([315],'zh_CN',{refresh:true});
-  assert.equal(calls,3); assert.deepEqual(missing.cards,[]); assert.deepEqual(missing.missing,[315]);
+  assert.deepEqual((await service.load([315,531],'zh_CN')).missing,[531]);
+  const result=await service.load([315,531],'zh_CN');
+  assert.deepEqual(requests,['315,531','531']);
+  assert.deepEqual(result.cards.map(card=>card.id),[315,531]);
 });
 
 test('a failed request does not leave a rejected promise blocking the next reload', async () => {
@@ -130,7 +122,7 @@ test('a failed request does not leave a rejected promise blocking the next reloa
   }});
   await assert.rejects(service.load([315],'zh_CN'));
   assert.equal(service.pending.size,0);
-  assert.equal((await service.load([315],'zh_CN',{refresh:true})).cards[0].id,315);
+  assert.equal((await service.load([315],'zh_CN')).cards[0].id,315);
   assert.equal(calls,2);
 });
 
@@ -193,7 +185,7 @@ test('API failures use stable codes that the interface can localize',async t=>{
   assert.deepEqual(await res.json(),{code:'API_CONFIGURATION'});
 });
 
-test('HTTP reload forwards the refresh flag and reports upstream timeouts separately',async t=>{
+test('HTTP accepts the legacy retry flag and reports upstream timeouts separately',async t=>{
   const options=[];
   const app=createApp({cards:{provider:'website',load:async(ids,locale,option)=>{
     options.push(option);
@@ -204,7 +196,7 @@ test('HTTP reload forwards the refresh flag and reports upstream timeouts separa
   t.after(()=>new Promise(resolve=>{app.close(resolve);app.closeAllConnections();}));
   const origin=`http://127.0.0.1:${app.address().port}`;
   assert.equal((await fetch(origin+'/api/cards?ids=315&refresh=1')).status,200);
-  assert.deepEqual(options[0],{refresh:true});
+  assert.equal(options[0],undefined);
   assert.equal((await fetch(origin+'/api/cards?ids=315&refresh=bad')).status,400);
   const timeout=await fetch(origin+'/api/cards?ids=531');
   assert.equal(timeout.status,504); assert.deepEqual(await timeout.json(),{code:'API_TIMEOUT'});

@@ -2,11 +2,16 @@
 import {createServer} from 'node:http';
 import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
-import {resolve, extname} from 'node:path';
+import {resolve, extname, join} from 'node:path';
 import {CardService} from './lib/cards.mjs';
+import {CardImageCache} from './lib/card-images.mjs';
 
 const root = fileURLToPath(new URL('./public/', import.meta.url));
-export function createApp({cards = new CardService()} = {}) {
+export function createApp({
+  cacheDirectory = fileURLToPath(new URL('./cache/', import.meta.url)),
+  cards = new CardService({cacheDirectory}),
+  images = new CardImageCache({directory: join(cacheDirectory, 'images')}),
+} = {}) {
   const files = new Set(['index.html', 'styles.css', 'app.mjs', 'decks.mjs', 'clipboard.mjs', 'card-loader.mjs', 'i18n.mjs', 'favicon.svg', 'LICENSE']);
   const types = {'.html': 'text/html', '.css': 'text/css', '.mjs': 'text/javascript', '.svg': 'image/svg+xml'};
   return createServer(async (req, res) => {
@@ -18,15 +23,29 @@ export function createApp({cards = new CardService()} = {}) {
       if (req.method !== 'GET' && req.method !== 'HEAD') return json(405, {error: '只支持 GET 请求。'});
       const url = new URL(req.url, 'http://localhost');
       if (url.pathname === '/api/health') return json(200, {ok: true, provider: cards.provider});
+      const imageRoute = /^\/api\/card-image\/(zh_CN|en_US)\/([1-9]\d{0,9})\/(full|crop)$/.exec(url.pathname);
+      if (imageRoute) {
+        const [, locale, id, kind] = imageRoute;
+        const source = await cards.imageUrl(Number(id), locale, kind);
+        if (!source) return json(404, {error: '卡图不存在。'});
+        const image = await images.load(source);
+        if (!image) {
+          res.writeHead(302, {Location: source, 'Cache-Control': 'no-store'});
+          return res.end();
+        }
+        res.writeHead(200, {'Content-Type': image.contentType, 'Content-Length': image.body.length, 'Cache-Control': 'no-store'});
+        return res.end(req.method === 'HEAD' ? undefined : image.body);
+      }
       if (url.pathname === '/api/cards') {
         const raw = url.searchParams.get('ids') || '';
         const locale = url.searchParams.get('locale') || 'zh_CN';
+        // Older clients may still send this flag when retrying.
         const refresh = url.searchParams.get('refresh') || '0';
         if (!['0','1'].includes(refresh)) return json(400, {error: '刷新参数无效。'});
         if (!/^\d+(,\d+)*$/.test(raw) || !['zh_CN', 'en_US'].includes(locale) || raw.split(',').length > 200) return json(400, {error: '卡牌 ID 或语言参数无效。'});
         const ids = raw.split(',').map(Number);
         if (ids.some(id => !Number.isSafeInteger(id) || id < 1 || id > 0x7fffffff)) return json(400, {error: '卡牌 ID 超出范围。'});
-        try { return json(200, await cards.load(ids, locale, {refresh: refresh === '1'})); }
+        try { return json(200, await cards.load(ids, locale)); }
         catch (error) {
           const timeout = error.name === 'TimeoutError' || [408,504].includes(error.status) || /TIMEOUT|TIMEDOUT/.test(error.cause?.code || error.code || '');
           const code = error.code === 'API_CONFIGURATION' ? 'API_CONFIGURATION' : timeout ? 'API_TIMEOUT' : 'API_UNAVAILABLE';

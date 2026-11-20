@@ -15,7 +15,7 @@ function delay(ms, signal) {
   });
 }
 
-// Initial loads try once. A user-requested reload performs up to three fresh
+// Initial loads try once. A user-requested reload performs up to three
 // attempts; each attempt gets a new timeout and aborts any unfinished batches.
 export async function loadCardData({ids, locale, refresh = false, signal, onAttempt = () => {}, fetcher = fetch, wait = delay}) {
   const total = refresh ? 3 : 1;
@@ -31,7 +31,6 @@ export async function loadCardData({ids, locale, refresh = false, signal, onAtte
     try {
       const batches = await Promise.all(chunks.map(async chunk => {
         const query = new URLSearchParams({ids: chunk.join(','), locale});
-        if (refresh) query.set('refresh', '1');
         let response;
         try { response = await fetcher(`/api/cards?${query}`, {cache: 'no-store', signal: attemptSignal}); }
         catch (error) {

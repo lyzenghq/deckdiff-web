@@ -14,7 +14,7 @@
 | --- | --- |
 | Node.js | **22.9.0 或更新版本**，用于运行服务端。从 [Node.js 官方网站](https://nodejs.org/en/download)安装受支持的 LTS 版本，并确保终端能找到 `node`。 |
 | 浏览器 | 需要支持 JavaScript ES modules、Fetch、`<dialog>` 和 CSS Grid，并启用 JavaScript。 |
-| 网络连接 | 加载完整卡牌资料时，服务端需要访问炉石官网，浏览器需要访问官方响应中的图像 CDN。卡组差异计算在浏览器本地进行。 |
+| 网络连接 | 卡牌资料或卡图未命中本地缓存时，需要访问暴雪官方接口或图像 CDN。卡组差异计算在浏览器本地进行。 |
 
 **第三方软件包依赖：无。** 服务端使用 Node.js 内置模块及内置 Fetch，前端使用原生 HTML、CSS、JavaScript，无需安装依赖包或执行构建命令。
 
@@ -42,15 +42,20 @@ node --version
 
 ### 3. 启动服务
 
-在项目根目录执行，Windows、macOS 和 Linux 均使用同一条命令：
+| 系统 | 启动方式 |
+| --- | --- |
+| Windows | 双击 `start.cmd`。 |
+| macOS / Linux | 在项目目录运行 `sh ./start.sh`。 |
+
+启动脚本会检查 Node.js 是否已安装且版本达到 22.9.0。
+
+三个系统也都可以在项目根目录直接运行以下命令。
 
 ```text
 node --env-file-if-exists=.env server.mjs
 ```
 
 打开 <http://127.0.0.1:3210>。命令窗口需要保持运行；按 **Ctrl + C** 停止服务。
-
-Windows 也可双击 `start.cmd`。脚本检查 Node.js 版本后启动；缺少或版本过低时会显示安装提示。
 
 默认模式无需创建 `.env` 或申请 API 密钥。首次启动可能显示 `.env not found. Continuing without it.`，表示使用默认配置，可以正常运行。
 
@@ -87,6 +92,13 @@ Windows 也可双击 `start.cmd`。脚本检查 Node.js 版本后启动；缺少
 
 `.env` 及其本地变体已被 `.gitignore` 忽略；只将不含真实凭据的 `.env.example` 提交到仓库。
 
+## 本地缓存
+
+- `cache/cards/` 保存卡牌资料和卡图网址，按数据来源、语言和卡牌 ID 分开存储。
+- `cache/images/` 保存浏览器实际请求的完整卡图和横图。同一个官方图像网址只保存一份。服务端仍可让浏览器直接从官方地址加载无法缓存的卡图。
+
+两种缓存都没有过期时间。每次加载和重试时，服务优先复用缓存，只向官方请求本地缺失的内容。缓存目录会自动创建，服务重启后可以继续使用，Git 会忽略该目录。需要获取官方更新或释放磁盘空间时，可以停止服务并删除项目根目录中的 `cache/`，再重新启动。
+
 ## 官方数据来源
 
 默认通过服务端访问[炉石传说官方网站卡牌库](https://hearthstone.blizzard.com/zh-cn/cards)使用的公开网页接口：
@@ -96,7 +108,7 @@ https://hearthstone.blizzard.com/zh-cn/api/cards?ids=315,531&locale=zh_CN&pageSi
 https://hearthstone.blizzard.com/en-us/api/cards?ids=315,531&locale=en_US&pageSize=200&collectible=0,1
 ```
 
-该网页接口无需密钥，但不是承诺稳定的开发者 API；网站接口调整可能影响数据加载。服务端只查询需要的 ID，按语言缓存 6 小时，最多保留 12000 条内存记录。卡图地址直接使用官方响应中的 URL，图像 CDN 域名由官方决定。浏览器向本项目服务端发送卡牌 ID 与语言，不发送完整卡组代码。
+该网页接口无需密钥，但不是承诺稳定的开发者 API；网站接口调整可能影响数据加载。服务端只查询需要的 ID，并使用官方响应提供的卡图地址。浏览器向本项目服务端发送卡牌 ID 与语言，不发送完整卡组代码。
 
 可选的正式接口为 [Battle.net Hearthstone Game Data API](https://community.developer.battle.net/documentation/hearthstone/game-data-apis)。使用它需要：
 
@@ -133,17 +145,19 @@ node --test
 - **提示缺少 Node**：先安装 Node.js，重新打开终端，确认 `node --version` 可用。
 - **提示不支持 `--env-file-if-exists`**：Node.js 版本过低，升级至 22.9.0 或更新版本。
 - **端口已被占用**：停止旧的服务窗口，或在 `.env` 中修改 `PORT`，再使用新端口访问。
-- **只有卡牌 ID，没有卡名或图片**：点击重试加载。手动重试会跳过浏览器及服务端卡牌缓存，最多尝试 3 次，并显示进度和成功/失败状态。若提示本地服务无法连接，请检查启动窗口；若提示官方接口超时或不可用，请检查服务端到官网的连接。图片仍缺失时还需检查浏览器到官方图像 CDN 的连接。
+- **只有卡牌 ID，没有卡名或图片**：点击重试加载。手动重试会继续尝试获取缺失的卡牌资料，最多尝试 3 次，并显示进度和成功或失败状态。若提示本地服务无法连接，请检查启动窗口。若提示官方接口超时或不可用，请检查服务端到官网的连接。图片仍缺失时，请检查到官方图像 CDN 的连接。
 - **粘贴按钮不可用**：使用 Ctrl / Cmd + V 手动粘贴。远程部署时使用 HTTPS。
 
 ## 目录与署名
 
 ```text
 public/          原生网页、卡组解析、比较与中英文文案
-lib/cards.mjs    官方数据适配器、鉴权与内存缓存
+lib/cards.mjs    官方数据适配器、鉴权与卡牌资料缓存
+cache/           自动创建的本地卡牌资料和图片缓存
 server.mjs       HTTP 服务与同源卡牌代理
 test/            Node.js 内置测试
 start.cmd        Windows 启动入口
+start.sh         macOS / Linux 通用启动脚本
 .env.example     不含凭据的配置示例
 NOTICE.md        原项目、格式参考及数据版权说明
 LICENSE          GNU GPLv2 完整许可证文本

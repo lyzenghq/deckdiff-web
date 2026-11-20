@@ -13,14 +13,14 @@ test('initial loading tries once and reports the upstream failure', async () => 
   assert.equal(calls,1);
 });
 
-test('manual reload sends fresh requests, reports progress and recovers on attempt three', async () => {
+test('manual retry reports progress and recovers on attempt three', async () => {
   const attempts=[], requests=[];
   const data=await loadCardData({ids:[315],locale:'zh_CN',refresh:true,wait:noWait,onAttempt:value=>attempts.push(value),fetcher:async(url,init)=>{
     requests.push({url,init}); return requests.length<3?failed():ok();
   }});
   assert.deepEqual(attempts,[{attempt:1,total:3},{attempt:2,total:3},{attempt:3,total:3}]);
   assert.equal(data.cards[0].name,'火球术');
-  assert.ok(requests.every(request=>new URL(request.url,'http://localhost').searchParams.get('refresh')==='1'&&request.init.cache==='no-store'));
+  assert.ok(requests.every(request=>request.url==='/api/cards?ids=315&locale=zh_CN'&&request.init.cache==='no-store'));
   assert.notEqual(requests[0].init.signal,requests[1].init.signal);
   assert.equal(requests[0].init.signal.aborted,true);
 });

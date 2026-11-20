@@ -13,7 +13,10 @@ const state = {
 };
 const t = (key, params) => translate(state.locale, key, params);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[c]));
-const safeImage = value => { try { const url = new URL(value); return url.protocol === 'https:' ? url.href : ''; } catch { return ''; } };
+const cardImage = (id, kind, value) => {
+  try { return new URL(value).protocol === 'https:' ? `/api/card-image/${state.locale}/${id}/${kind}` : ''; }
+  catch { return ''; }
+};
 const plainText = value => String(value || '').replace(/<[^>]*>/g, '').replace(/\[x\]/g, '');
 const metadata = id => state.metadata.get(state.locale)?.get(id);
 const officialLocale = () => state.locale === 'zh_CN' ? 'zh-cn' : 'en-us';
@@ -205,7 +208,7 @@ function cardRow(row, side) {
   const id = row[`${side}Id`] ?? row.id, ownerId = row[`${side}Owner`] ?? row.owner;
   const count = row[side], card = metadata(id);
   if (!count) return `<div class="card-placeholder">${esc(t('notIncluded'))}</div>`;
-  const image = safeImage(card?.cropImage), name = cardName(id);
+  const image = cardImage(id, 'crop', card?.cropImage), name = cardName(id);
   const changed = row.delta !== 0, owner = ownerId ? cardName(ownerId) : null;
   const statusClass = changed ? (side === 'a' && row.delta < 0 ? 'removed-card' : side === 'b' && row.delta > 0 ? 'added-card' : '') : 'common-card';
   return `<button type="button" class="card-row ${statusClass}" data-card="${id}" aria-label="${esc(t('cardLabel', {name, count}))}">
@@ -244,7 +247,7 @@ document.addEventListener('error', event => {
 }, true);
 function openCard(id) {
   state.activeCard = id;
-  const card = metadata(id), image = safeImage(card?.image), name = cardName(id);
+  const card = metadata(id), image = cardImage(id, 'full', card?.image), name = cardName(id);
   $('#card-detail').innerHTML = `${image ? `<img src="${esc(image)}" alt="${esc(t('cardImage', {name}))}">` : ''}<h2 id="card-title">${esc(name)}</h2><p>${esc(plainText(card?.text) || t('noDetails'))}</p><a href="https://hearthstone.blizzard.com/${officialLocale()}/cards/${id}" target="_blank" rel="noreferrer">${esc(t('viewOfficial'))}</a>`;
   if (!$('#card-dialog').open) $('#card-dialog').showModal();
 }
