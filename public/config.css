@@ -1,0 +1,6 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* Card artwork opacity ranges from 0 (transparent) to 1 (opaque). */
+:root {
+  --card-art-opacity-desktop: .99;
+  --card-art-opacity-mobile: .66;
+}

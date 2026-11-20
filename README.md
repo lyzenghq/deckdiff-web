@@ -158,6 +158,10 @@ This build source uses Blizzard's official API data and image URLs. The 30-day s
 
 Similarity is the number of shared cards divided by the size of the larger main deck. Edition matching falls back to raw IDs when reprint links are unavailable. The tool compares deck composition. Legality depends on the current game rules.
 
+## Card artwork settings
+
+Edit `--card-art-opacity-desktop` and `--card-art-opacity-mobile` to adjust the row illustrations in Changes, All cards, and Shared cards. Values range from `0` (transparent) to `1` (opaque). Refresh the Node.js edition after editing, or rebuild the static edition to include the new settings. [Artwork configuration](public/config.css)
+
 ## Tests
 
 Run the test suite from the project folder.

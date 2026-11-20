@@ -232,8 +232,8 @@ function cardRow(row, side) {
   const image = cardImage(id, 'crop', card?.cropImage);
   const moduleImage = !image && isZilliaxModule(id, ownerId) && cardImage(id, 'full', card?.image);
   const name = cardName(id, ownerId), isAppearance = Boolean(zilliaxAppearanceModule(id, ownerId));
-  const changed = row.delta !== 0, owner = ownerId ? cardName(ownerId) : null;
-  const statusClass = changed ? (side === 'a' && row.delta < 0 ? 'removed-card' : side === 'b' && row.delta > 0 ? 'added-card' : '') : 'common-card';
+  const owner = ownerId ? cardName(ownerId) : null;
+  const statusClass = side === 'a' && row.delta < 0 ? 'removed-card' : side === 'b' && row.delta > 0 ? 'added-card' : '';
   return `<button type="button" class="card-row ${statusClass}" data-card="${id}" data-owner="${ownerId || 0}" aria-label="${esc(t('cardLabel', {name, count}))}">
     ${image ? `<img class="card-art" src="${esc(image)}" alt="" loading="lazy">` : ''}
     ${moduleImage ? `<span class="card-art card-art-window"><img class="card-art-render" src="${esc(moduleImage)}" alt="" loading="lazy"></span>` : ''}
