@@ -21,7 +21,7 @@ test('alternate hero portraits use the official class ID when available', () => 
   assert.equal(heroClassName('en_US', 99999, {classId: 10}), 'Warrior');
   assert.equal(heroClassName('en_US', 99999), null);
 });
-test('the initial page declares English and selects it first', async () => {
+test('static HTML provides an English fallback before the app initializes', async () => {
   const html = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
   const choices = [...html.matchAll(/data-locale="([^"]+)" aria-pressed="([^"]+)"/g)];
   assert.match(html, /<html lang="en">/);

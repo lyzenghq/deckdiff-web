@@ -10,7 +10,9 @@ const staticMode = Boolean($('meta[name="deckdiff-card-source"][content="snapsho
 const cardSource = staticMode ? loadStaticCards : undefined;
 const inputs = [$('#deck-a'), $('#deck-b')];
 const state = {
-  locale: 'en_US', filter: 'diff', decks: null, diff: null,
+  locale: /^zh(?:-|$)/i.test(navigator.language) ? 'zh_CN' : 'en_US',
+  preferredLocale: undefined,
+  filter: 'diff', decks: null, diff: null,
   metadata: new Map(), loadStates: new Map(), requests: new Map(),
   generation: 0, activeCard: null, errors: [null, null], notice: null, toast: null,
 };
@@ -64,7 +66,7 @@ function dataNotice() {
   else notice(null);
 }
 function save() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify({a: inputs[0].value, b: inputs[1].value, locale: state.locale})); }
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify({a: inputs[0].value, b: inputs[1].value, locale: state.preferredLocale})); }
   catch { /* Keep the app usable when storage is disabled. */ }
 }
 try {
@@ -72,7 +74,10 @@ try {
   if (data) {
     inputs[0].value = typeof data.a === 'string' ? data.a.slice(0,100000) : '';
     inputs[1].value = typeof data.b === 'string' ? data.b.slice(0,100000) : '';
-    if (data.locale === 'en_US' || data.locale === 'zh_CN') state.locale = data.locale;
+    if (data.locale === 'en_US' || data.locale === 'zh_CN') {
+      state.preferredLocale = data.locale;
+      state.locale = data.locale;
+    }
   }
 } catch { /* Ignore stale settings. */ }
 
@@ -151,8 +156,12 @@ document.querySelectorAll('[data-paste]').forEach(button => button.addEventListe
   } catch { toast('clipboardRead'); input.focus(); }
 }));
 document.querySelectorAll('[data-locale]').forEach(button => button.addEventListener('click', () => {
-  if (state.locale === button.dataset.locale) return;
-  state.locale = button.dataset.locale; save(); renderInterface();
+  const locale = button.dataset.locale;
+  state.preferredLocale = locale;
+  save();
+  if (state.locale === locale) return;
+  state.locale = locale;
+  renderInterface();
   if (state.decks) {
     render();
     if (state.metadata.has(state.locale)) dataNotice();

@@ -27,7 +27,7 @@ The app is an independent web reimplementation inspired by the DeckDIFF browser 
 | Card images | The server fetches and caches Blizzard images on demand. | The browser requests images on demand from the selected source's image CDN. |
 | Updates | Cached records and images persist until cleared. | A new build generates a new catalog snapshot. GitHub Pages serves it after a successful deployment. |
 
-English is selected on the first visit. The app remembers your language choice and deck inputs in your browser's local storage. Card names, images, and edition matching depend on the selected data source.
+The app displays Simplified Chinese if your browser's primary language is Chinese, and English otherwise. If you choose a language, the app remembers it and uses it on future visits. Deck inputs are also saved in your browser's local storage. Card names, images, and edition matching depend on the selected data source.
 
 ## Requirements
 
