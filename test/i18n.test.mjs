@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {messages, translate} from '../public/i18n.mjs';
+import {messages, translate, heroClassName} from '../public/i18n.mjs';
 import {parseInput} from '../public/decks.mjs';
 
 test('both locales cover the same messages and interpolation parameters', () => {
@@ -14,6 +14,12 @@ test('both locales cover the same messages and interpolation parameters', () => 
   }
   assert.equal(translate('en_US', 'cardLabel', {name: 'Fireball', count: 2}), 'Fireball, quantity: 2, view details');
   assert.equal(translate('zh_CN', 'mainCount', {count: 30}), '30 张主卡牌');
+});
+
+test('alternate hero portraits use the official class ID when available', () => {
+  assert.equal(heroClassName('zh_CN', 99999, {classId: 14}), '恶魔猎手');
+  assert.equal(heroClassName('en_US', 99999, {classId: 10}), 'Warrior');
+  assert.equal(heroClassName('en_US', 99999), null);
 });
 test('static labels and parser errors resolve in either interface language', async () => {
   const html = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');

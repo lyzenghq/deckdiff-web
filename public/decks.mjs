@@ -67,6 +67,21 @@ export function parseInput(input) {
   throw lastError || new DeckError('invalidDeck', '未找到有效的卡组代码。');
 }
 
+const ZILLIAX = 102983;
+// The game's cosmetic card IDs point to the functional modules they illustrate.
+const ZILLIAX_APPEARANCES = new Map([
+  [110440, 104944], [110441, 104948], [110442, 104945], [110443, 104949],
+  [110444, 104947], [110445, 104950], [110446, 104951], [112530, 104946],
+]);
+
+export function zilliaxAppearanceModule(id, owner) {
+  if (owner === ZILLIAX) return ZILLIAX_APPEARANCES.get(id);
+}
+
+export function isZilliaxModule(id, owner) {
+  return owner === ZILLIAX && ((id >= 104944 && id <= 104951) || ZILLIAX_APPEARANCES.has(id));
+}
+
 export function compare(a, b, metadata = new Map()) {
   // Official same-card links form families. Matching never depends on names or art.
   const parents = new Map();
@@ -89,7 +104,10 @@ export function compare(a, b, metadata = new Map()) {
   function merge(left, right) {
     const rows = new Map();
     for (const [index, cards] of [left, right].entries()) for (const card of cards) {
-      const key = `${card.owner ? family(card.owner) : 0}:${family(card.id)}`;
+      const owner = card.owner ? family(card.owner) : 0;
+      // Cosmetic choices have distinct meanings even when the API links the card versions.
+      const key = zilliaxAppearanceModule(card.id, card.owner)
+        ? `${owner}:appearance:${card.id}` : `${owner}:${family(card.id)}`;
       if (!rows.has(key)) rows.set(key, {id: card.id, owner: card.owner, a: 0, b: 0});
       const row = rows.get(key), side = index === 0 ? 'a' : 'b';
       row[side] += card.count;

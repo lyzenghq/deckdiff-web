@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
-import {parseInput, compare, examples} from './decks.mjs';
-import {translate} from './i18n.mjs';
+import {parseInput, compare, examples, isZilliaxModule, zilliaxAppearanceModule} from './decks.mjs';
+import {translate, heroClassName, cardDisplayName} from './i18n.mjs';
 import {formatDifferences} from './clipboard.mjs';
 import {loadCardData} from './card-loader.mjs';
 
@@ -151,7 +151,7 @@ document.querySelectorAll('[data-locale]').forEach(button => button.addEventList
     if (state.metadata.has(state.locale)) dataNotice();
     else loadMetadata();
   }
-  if (state.activeCard) openCard(state.activeCard);
+  if (state.activeCard && $('#card-dialog').open) openCard(state.activeCard);
 }));
 document.querySelectorAll('[data-filter]').forEach(button => button.addEventListener('click', () => {
   state.filter = button.dataset.filter;
@@ -181,13 +181,24 @@ async function loadMetadata({refresh = false} = {}) {
       if (locale === state.locale) dataNotice();
     }});
     if (!isCurrent()) return;
-    state.metadata.set(locale, new Map(data.cards.map(card => [card.id, card])));
+    const cards = new Map(data.cards.map(card => [card.id, card]));
+    state.metadata.set(locale, cards);
     state.loadStates.set(locale, {missing: data.missing, reloaded: refresh});
     state.diff = compare(...state.decks, comparisonMetadata());
     render();
-    if (locale !== state.locale) return;
-    dataNotice();
-    if (state.activeCard) openCard(state.activeCard);
+    if (locale === state.locale) {
+      dataNotice();
+      if (state.activeCard && $('#card-dialog').open) openCard(state.activeCard);
+    }
+    const portraits = [...new Set(state.decks.flatMap(deck => deck.heroes))]
+      .filter(id => !heroClassName(locale, id, cards.get(id)));
+    if (portraits.length) {
+      // Hero portraits supplement the heading after the comparison has rendered.
+      const data = await loadCardData({ids: portraits, locale, signal: request.controller.signal}).catch(() => null);
+      if (!data || !isCurrent()) return;
+      for (const portrait of data.cards) cards.set(portrait.id, portrait);
+      if (locale === state.locale) renderDeckHeadings();
+    }
   } catch (error) {
     if (!isCurrent() || request.controller.signal.aborted) return;
     const errors = {API_TIMEOUT: 'timeout', API_CONFIGURATION: 'apiConfiguration', LOCAL_SERVER_UNAVAILABLE: 'localServerUnavailable'};
@@ -199,35 +210,44 @@ function visible(row) {
   return state.filter === 'all' || (state.filter === 'diff' ? row.delta !== 0 : row.common > 0);
 }
 function sorted(rows) {
-  return [...rows].sort((a,b) => (metadata(a.id)?.manaCost ?? 999) - (metadata(b.id)?.manaCost ?? 999)
-    || (metadata(a.id)?.name || String(a.id)).localeCompare(metadata(b.id)?.name || String(b.id), state.locale === 'zh_CN' ? 'zh-CN' : 'en')
+  const name = ({id, owner}) => zilliaxAppearanceModule(id, owner) ? cardName(id, owner) : metadata(id)?.name || String(id);
+  return [...rows].sort((a,b) => (rowMana(a.id, a.owner) ?? 999) - (rowMana(b.id, b.owner) ?? 999)
+    || name(a).localeCompare(name(b), state.locale === 'zh_CN' ? 'zh-CN' : 'en')
     || (a.owner || 0) - (b.owner || 0));
 }
-function cardName(id) { return metadata(id)?.name || t('unknownCard', {id}); }
+function cardName(id, owner) { return cardDisplayName(state.locale, id, owner, metadata(id)); }
+function rowMana(id, owner) { return zilliaxAppearanceModule(id, owner) ? null : metadata(id)?.manaCost; }
 function cardRow(row, side) {
   const id = row[`${side}Id`] ?? row.id, ownerId = row[`${side}Owner`] ?? row.owner;
   const count = row[side], card = metadata(id);
   if (!count) return `<div class="card-placeholder">${esc(t('notIncluded'))}</div>`;
-  const image = cardImage(id, 'crop', card?.cropImage), name = cardName(id);
+  const image = cardImage(id, 'crop', card?.cropImage);
+  const moduleImage = !image && isZilliaxModule(id, ownerId) && cardImage(id, 'full', card?.image);
+  const name = cardName(id, ownerId), isAppearance = Boolean(zilliaxAppearanceModule(id, ownerId));
   const changed = row.delta !== 0, owner = ownerId ? cardName(ownerId) : null;
   const statusClass = changed ? (side === 'a' && row.delta < 0 ? 'removed-card' : side === 'b' && row.delta > 0 ? 'added-card' : '') : 'common-card';
-  return `<button type="button" class="card-row ${statusClass}" data-card="${id}" aria-label="${esc(t('cardLabel', {name, count}))}">
+  return `<button type="button" class="card-row ${statusClass}" data-card="${id}" data-owner="${ownerId || 0}" aria-label="${esc(t('cardLabel', {name, count}))}">
     ${image ? `<img class="card-art" src="${esc(image)}" alt="" loading="lazy">` : ''}
-    <span class="mana" aria-label="${esc(t('manaLabel', {cost: card?.manaCost ?? t('unknown')}))}">${esc(card?.manaCost ?? '?')}</span>
+    ${moduleImage ? `<span class="card-art card-art-window"><img class="card-art-render" src="${esc(moduleImage)}" alt="" loading="lazy"></span>` : ''}
+    ${isAppearance ? '<span class="mana" aria-hidden="true"></span>' : `<span class="mana" aria-label="${esc(t('manaLabel', {cost: card?.manaCost ?? t('unknown')}))}">${esc(card?.manaCost ?? '?')}</span>`}
     <span class="card-name">${esc(name)}${owner ? `<small>${esc(t('owner', {name: owner}))}</small>` : ''}</span><span class="card-copy">×${count}</span></button>`;
 }
 function rowHtml(row) {
   return `<div class="compare-row">${cardRow(row, 'a')}<div class="row-delta">${row.delta === 0 ? '=' : `<span class="${row.delta > 0 ? 'plus' : 'minus'}">${row.delta > 0 ? '+' : '−'}${Math.abs(row.delta)}</span>`}</div>${cardRow(row, 'b')}</div>`;
+}
+function renderDeckHeadings() {
+  $('#deck-headings').innerHTML = state.decks.map((deck,index) => {
+    const name = deck.name || t(index ? 'deckB' : 'deckA');
+    const classes = deck.heroes.map(id => heroClassName(state.locale, id, metadata(id)) || t('hero', {ids: id}));
+    return `<div class="deck-heading"><strong><span class="deck-letter">${index ? 'B' : 'A'}</span><span class="deck-name" title="${esc(name)}">${esc(name)}<small>${esc(t(`format.${deck.format}`))} · ${esc(classes.join(', '))}</small></span></strong><span>${esc(t('mainCount', {count: index ? state.diff.totalB : state.diff.totalA}))}</span></div>`;
+  }).join('');
 }
 function render() {
   const d = state.diff; if (!d) return;
   const max = Math.max(d.totalA, d.totalB), percent = max ? Math.round(d.common / max * 100) : 100;
   $('#summary').innerHTML = `<div class="stat"><strong>${percent}%</strong><span>${esc(t('similarity'))}</span><small>${esc(t('similarityHelp'))}</small></div><div class="stat"><strong>${d.common}</strong><span>${esc(t('shared'))}</span></div><div class="stat removed"><strong>−${d.removed}</strong><span>${esc(t('removed'))}</span></div><div class="stat added"><strong>+${d.added}</strong><span>${esc(t('added'))}</span></div>`;
   $('#diff-count').textContent = d.rows.filter(row => row.delta !== 0).length + d.sideboard.filter(row => row.delta !== 0).length;
-  $('#deck-headings').innerHTML = state.decks.map((deck,index) => {
-    const name = deck.name || t(index ? 'deckB' : 'deckA');
-    return `<div class="deck-heading"><strong><span class="deck-letter">${index ? 'B' : 'A'}</span><span class="deck-name" title="${esc(name)}">${esc(name)}<small>${esc(t(`format.${deck.format}`))} · ${esc(t('hero', {ids: deck.heroes.join(', #')}))}</small></span></strong><span>${esc(t('mainCount', {count: index ? d.totalB : d.totalA}))}</span></div>`;
-  }).join('');
+  renderDeckHeadings();
   const rows = sorted(d.rows.filter(visible)), sideboard = sorted(d.sideboard.filter(visible));
   $('#cards').innerHTML = rows.map(rowHtml).join('');
   $('#sideboard-section').hidden = !sideboard.length;
@@ -245,13 +265,18 @@ document.addEventListener('error', event => {
     if (event.target.closest('#card-detail')) toast('imageFailed');
   }
 }, true);
-function openCard(id) {
-  state.activeCard = id;
-  const card = metadata(id), image = cardImage(id, 'full', card?.image), name = cardName(id);
-  $('#card-detail').innerHTML = `${image ? `<img src="${esc(image)}" alt="${esc(t('cardImage', {name}))}">` : ''}<h2 id="card-title">${esc(name)}</h2><p>${esc(plainText(card?.text) || t('noDetails'))}</p><a href="https://hearthstone.blizzard.com/${officialLocale()}/cards/${id}" target="_blank" rel="noreferrer">${esc(t('viewOfficial'))}</a>`;
+function openCard(selection) {
+  const {id, owner} = selection;
+  state.activeCard = selection;
+  const card = metadata(id), image = cardImage(id, 'full', card?.image), name = cardName(id, owner);
+  const description = zilliaxAppearanceModule(id, owner) ? t('appearanceDetails') : plainText(card?.text) || t('noDetails');
+  $('#card-detail').innerHTML = `${image ? `<img src="${esc(image)}" alt="${esc(t('cardImage', {name}))}">` : ''}<h2 id="card-title">${esc(name)}</h2><p>${esc(description)}</p><a href="https://hearthstone.blizzard.com/${officialLocale()}/cards/${id}" target="_blank" rel="noreferrer">${esc(t('viewOfficial'))}</a>`;
   if (!$('#card-dialog').open) $('#card-dialog').showModal();
 }
-$('#results').addEventListener('click', event => { const button = event.target.closest('[data-card]'); if (button) openCard(Number(button.dataset.card)); });
+$('#results').addEventListener('click', event => {
+  const button = event.target.closest('[data-card]');
+  if (button) openCard({id: Number(button.dataset.card), owner: Number(button.dataset.owner)});
+});
 $('#close-dialog').addEventListener('click', () => $('#card-dialog').close());
 $('#card-dialog').addEventListener('click', event => {
   if (event.target !== $('#card-dialog')) return;

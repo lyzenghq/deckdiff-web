@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {decode, parseInput, compare, encodeExample, examples} from '../public/decks.mjs';
+import {decode, parseInput, compare, encodeExample, examples, isZilliaxModule, zilliaxAppearanceModule} from '../public/decks.mjs';
+import {cardDisplayName, heroClassName} from '../public/i18n.mjs';
 
 test('parses bare deckstrings and game exports with CRLF comments', () => {
   const deck = parseInput(`### 我的法师\r\n# comment\r\n${examples[0]}\r\n# footer`);
@@ -95,4 +96,25 @@ test('sideboard cards and their owners both match across official reprints', () 
   assert.equal(result.sideboard[0].delta,0);
   assert.equal(result.sideboard[0].aOwner,110); assert.equal(result.sideboard[0].bOwner,210);
   assert.equal(result.sideboard[0].aId,11); assert.equal(result.sideboard[0].bId,21);
+});
+
+test('the two Wild Warrior lists share Zilliax’s two functional modules and Perfect appearance', () => {
+  const first = decode('AAEBAQcoS8MWz+cC/KMDj84Dk9AD9tYD+YwElpUE5bAEx7IEjLYEjLcE784EuNkEuu0El+8E4qQF/cQFofsFi5QGn54G0Z4Gh6AGx6QGkagGr6gG0LAG1boGjr8GusEG+skG88oGquoGqfUGw4MH25cH6qcH/K8HlNkHAAABBu/OBP3EBfeXBv3EBdGeBv3EBfWzBsekBvezBsekBu7eBsekBgAA');
+  const second = decode('AAEBAQcoS8MW9s8Cz+cC/KMDuLkDj84Dk9AD9tYDxfUD+YwEpY0ElpUE5bAEjLYEjLcE784EuNkEl+8E4qQF/cQFi5QGn54G0Z4Gh6AGx6QGkagGr6gG0LAGjr8GquoGqfUGw4MH25cH6qcH/K8HucMHlNkHhOkHj/cHAAABBqWNBP3EBe/OBP3EBfWzBsekBvezBsekBu7eBsekBp7CB/3EBQAA');
+  assert.equal(heroClassName('zh_CN', first.heroes[0]), '战士');
+  assert.equal(heroClassName('en_US', second.heroes[0]), 'Warrior');
+  const rows = compare(first, second).sideboard.filter(row => row.owner === 102983);
+  assert.deepEqual(rows.map(({id, delta}) => [id, delta]), [[104949, 0], [104951, 0], [110446, 0]]);
+  assert.ok(rows.every(row => isZilliaxModule(row.id, row.owner)));
+  assert.deepEqual(rows.map(row => zilliaxAppearanceModule(row.id, row.owner)), [undefined, undefined, 104951]);
+  assert.equal(cardDisplayName('zh_CN', 110446, 102983), '外观：完美模块');
+  assert.equal(cardDisplayName('en_US', 110446, 102983), 'Appearance: Perfect Module');
+});
+
+test('different Zilliax appearances remain distinguishable through official copy links', () => {
+  const deck = appearance => decode(encodeExample([[102983, 1]], [[104949, 1, 102983], [104951, 1, 102983], [appearance, 1, 102983]]));
+  const copies = new Map([[110446, {id: 110446, copyOfCardId: [110443]}]]);
+  const result = compare(deck(110446), deck(110443), copies);
+  assert.deepEqual(result.sideboard.map(({id, delta}) => [id, delta]), [[104949, 0], [104951, 0], [110446, -1], [110443, 1]]);
+  assert.equal(result.common, 1);
 });
